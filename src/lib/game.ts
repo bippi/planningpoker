@@ -1,13 +1,13 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase-server";
 import { roomChannel } from "./supabase-browser";
-import { DECKS, type DeckId } from "./decks";
+import { cardsFor, type DeckId } from "./decks";
 import type { Action, GameState, PlayerView } from "./types";
 
 /** A player counts as online if they've sent a heartbeat within this window. */
 const ONLINE_MS = 60_000;
 
-type RoomRow = { id: string; name: string; deck: DeckId; revealed: boolean; round: number };
+type RoomRow = { id: string; name: string; deck: DeckId; max_card: string | null; revealed: boolean; round: number };
 type PlayerRow = {
   player_id: string;
   name: string;
@@ -31,7 +31,7 @@ export function assertPlayerId(id: unknown): asserts id is string {
 async function load(roomId: string) {
   const db = supabaseAdmin();
   const [{ data: room, error: roomErr }, { data: players, error: playersErr }] = await Promise.all([
-    db.from("poker_rooms").select("id, name, deck, revealed, round").eq("id", roomId).maybeSingle<RoomRow>(),
+    db.from("poker_rooms").select("id, name, deck, max_card, revealed, round").eq("id", roomId).maybeSingle<RoomRow>(),
     db
       .from("poker_players")
       .select("player_id, name, is_facilitator, vote, last_seen_at, joined_at")
@@ -61,8 +61,9 @@ export async function getState(roomId: string, viewerId: string): Promise<GameSt
     hasVoted: p.vote !== null,
     vote: room.revealed || p.player_id === viewerId ? p.vote : null,
   }));
+  const { max_card, ...rest } = room;
   return {
-    room,
+    room: { ...rest, maxCard: max_card },
     players: views,
     me: views.find((p) => p.id === viewerId) ?? null,
     canControl: canControl(players, viewerId),
@@ -124,7 +125,7 @@ export async function applyAction(roomId: string, playerId: string, action: Acti
     case "vote": {
       if (room.revealed) throw new GameError("Cards are already revealed");
       const card = action.card;
-      if (card !== null && !DECKS[room.deck].includes(card)) throw new GameError("Invalid card");
+      if (card !== null && !cardsFor(room.deck, room.max_card).includes(card)) throw new GameError("Invalid card");
       await db
         .from("poker_players")
         .update({ vote: card, last_seen_at: now })

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LangToggle, useLang } from "@/lib/i18n";
-import type { DeckId } from "@/lib/decks";
+import { cardsFor, maxOptions, type DeckId } from "@/lib/decks";
 import { CardFace } from "@/components/playing-card";
 
 const HERO_CARDS = ["1", "2", "3", "5", "8"];
@@ -13,6 +13,7 @@ export default function Home() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [deck, setDeck] = useState<DeckId>("fibonacci");
+  const [maxCard, setMaxCard] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
 
@@ -24,7 +25,7 @@ export default function Home() {
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || t.gameNamePlaceholder, deck }),
+        body: JSON.stringify({ name: name.trim() || t.gameNamePlaceholder, deck, maxCard }),
       });
       if (!res.ok) throw new Error();
       const { id } = await res.json();
@@ -85,13 +86,37 @@ export default function Home() {
                     deck === id ? "border-accent bg-accent/5" : "border-line hover:border-muted"
                   }`}
                 >
-                  <input type="radio" name="deck" value={id} checked={deck === id} onChange={() => setDeck(id)} className="sr-only" />
+                  <input type="radio" name="deck" value={id} checked={deck === id} onChange={() => {
+                      setDeck(id);
+                      setMaxCard(null);
+                    }} className="sr-only" />
                   <span className="font-semibold">{id === "fibonacci" ? t.deckFibonacciName : t.deckModifiedName}</span>
-                  <span className="text-sm text-muted">{id === "fibonacci" ? t.deckFibonacciValues : t.deckModifiedValues}</span>
+                  <span className="text-sm text-muted">
+                    {deck === id ? cardsFor(id, maxCard).join(", ") : id === "fibonacci" ? t.deckFibonacciValues : t.deckModifiedValues}
+                  </span>
                 </label>
               ))}
             </div>
           </fieldset>
+
+          <label className="mt-6 block font-semibold" htmlFor="max-card">
+            {t.maxCard}
+          </label>
+          <select
+            id="max-card"
+            value={maxCard ?? ""}
+            onChange={(e) => setMaxCard(e.target.value || null)}
+            className="mt-2 w-full rounded-xl border-2 border-line bg-bg px-4 py-3 outline-none focus:border-accent"
+          >
+            {maxOptions(deck)
+              .slice()
+              .reverse()
+              .map((card, i) => (
+                <option key={card} value={i === 0 ? "" : card}>
+                  {card}
+                </option>
+              ))}
+          </select>
 
           {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{t.error}</p>}
 

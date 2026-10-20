@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { supabaseBrowser, roomChannel } from "@/lib/supabase-browser";
 import { getPlayerId, getSavedName, saveName } from "@/lib/player";
 import { LangToggle, useLang } from "@/lib/i18n";
-import { DECKS } from "@/lib/decks";
+import { cardsFor } from "@/lib/decks";
 import type { Action, GameState } from "@/lib/types";
 import { PokerTable } from "./poker-table";
 import { Results } from "./results";
@@ -124,7 +124,7 @@ export function GameClient() {
   // Show players who are connected right now (plus yourself, before presence syncs).
   const visible = state.players.filter((p) => !onlineIds || onlineIds.has(p.id) || p.id === playerId);
   const voted = state.players.filter((p) => p.hasVoted).length;
-  const cards = DECKS[state.room.deck];
+  const cards = cardsFor(state.room.deck, state.room.maxCard);
 
   return (
     <main className="flex flex-1 flex-col">

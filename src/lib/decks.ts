@@ -15,6 +15,25 @@ function toNumber(card: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Numeric cards of a deck that can be chosen as the highest card. */
+export function maxOptions(deck: DeckId): string[] {
+  return DECKS[deck].filter((c) => toNumber(c) !== null && toNumber(c)! > 0);
+}
+
+export function isMaxCard(deck: DeckId, value: unknown): value is string {
+  return typeof value === "string" && maxOptions(deck).includes(value);
+}
+
+/** The cards in play: the deck capped at `max` (null = whole deck), keeping ? and ☕. */
+export function cardsFor(deck: DeckId, max: string | null): string[] {
+  const limit = max === null ? null : toNumber(max);
+  if (limit === null) return DECKS[deck];
+  return DECKS[deck].filter((c) => {
+    const n = toNumber(c);
+    return n === null || n <= limit;
+  });
+}
+
 export type VoteSummary = {
   average: number | null;
   agreement: number | null;

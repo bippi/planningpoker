@@ -10,7 +10,7 @@ export type PlayerView = {
 };
 
 export type GameState = {
-  room: { id: string; name: string; deck: DeckId; revealed: boolean; round: number };
+  room: { id: string; name: string; deck: DeckId; maxCard: string | null; revealed: boolean; round: number };
   players: PlayerView[];
   me: PlayerView | null;
   /** Whether the viewer may reveal/reset (facilitator, or no facilitator online). */
