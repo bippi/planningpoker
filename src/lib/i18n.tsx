@@ -101,7 +101,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
     try {
       stored = localStorage.getItem(STORAGE_KEY);
     } catch {}
-    const initial: Lang = stored === "is" || stored === "en" ? stored : navigator.language.startsWith("is") ? "is" : "en";
+    const initial: Lang = stored === "is" ? "is" : "en";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after hydration
     setLang(initial);
   }, []);
